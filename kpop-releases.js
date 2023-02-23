@@ -35,9 +35,7 @@ const getKeyByValue = (object, value) => {
 };
 
 const groupByDateAndLimit = (releases, limit) => {
-  let updatedReleases = releases.sort((a, b) => a.date - b.date);
-  if (limit !== undefined) updatedReleases = updatedReleases.slice(0, limit);
-  return updatedReleases.reduce((accumulator, release) => {
+  return releases.slice(0, limit).reduce((accumulator, release) => {
     const key = release.date;
     accumulator[key] = accumulator[key] || [];
     accumulator[key].push(release.title);
@@ -64,14 +62,14 @@ const getReleasesAPI = async () => {
       date: release.startTime * 1000
     };
   });
-  fm.writeString(apiCache, JSON.stringify(allUpcomingReleases));
+  fm.writeString(apiCache, JSON.stringify(allUpcomingReleases.sort((a, b) => a.date - b.date)));
 };
 
 const getReleases = async (limit) => {
   if (!fm.fileExists(apiCache)) await getReleasesAPI();
   await fm.downloadFileFromiCloud(apiCache);
   const content = await JSON.parse(fm.readString(apiCache));
-  const timestamp = content.sort((a, b) => a.date - b.date).at(0).date;
+  const timestamp = content.at(0).date;
   const oneHourAgo = new Date() - (4.2 * 10 ** 6);
   if (new Date(oneHourAgo) > new Date(parseInt(timestamp, 10))) {
     await getReleasesAPI();
