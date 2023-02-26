@@ -1,7 +1,7 @@
 // Variables used by Scriptable.
 // These must be at the very top of the file. Do not edit.
 // icon-color: pink; icon-glyph: calendar-alt;
-// KPop Releases Widget by heismauri (v1.1.0)
+// KPop Releases Widget by heismauri (v1.1.1)
 
 // Utilities
 const addLeadingZero = (number) => {
@@ -45,7 +45,7 @@ const groupByDateAndLimit = (releases, limit) => {
 
 // HTML Preview
 const encodeString = (text) => {
-  return text.replace(/[\u00A0-\u9999<>\&]/gim, (i) => '&#' + i.charCodeAt(0) + ';');
+  return text.replace(/[\u00A0-\u9999<>&]/gim, (i) => `&#${i.charCodeAt(0)};`);
 };
 
 const releasesToHTML = (releases) => {
@@ -99,7 +99,10 @@ const getReleasesAPI = async () => {
       date: release.startTime * 1000
     };
   });
-  fm.writeString(apiCache, JSON.stringify(allUpcomingReleases.sort((a, b) => a.date - b.date)));
+  const sortedReleases = allUpcomingReleases
+    .sort((a, b) => a.title.localeCompare(b.title))
+    .sort((a, b) => a.date - b.date);
+  fm.writeString(apiCache, JSON.stringify(sortedReleases));
 };
 
 const getReleases = async (limit) => {
@@ -175,12 +178,12 @@ mainStack.addSpacer();
 
 // Generate Alert
 const generateAlert = async (options) => {
-  let alert = new Alert();
+  const alert = new Alert();
   alert.message = 'What would you like to do?';
   options.forEach((option) => {
     alert.addAction(option);
   });
-  return await alert.presentAlert();
+  return alert.presentAlert();
 };
 
 // Preview widget in large
