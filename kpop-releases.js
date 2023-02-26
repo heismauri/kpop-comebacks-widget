@@ -1,7 +1,7 @@
 // Variables used by Scriptable.
 // These must be at the very top of the file. Do not edit.
 // icon-color: pink; icon-glyph: calendar-alt;
-// KPop Releases Widget by heismauri
+// KPop Releases Widget by heismauri (v1.1.0)
 
 // Utilities
 const addLeadingZero = (number) => {
@@ -43,6 +43,44 @@ const groupByDateAndLimit = (releases, limit) => {
   }, {});
 };
 
+// HTML Preview
+const encodeString = (text) => {
+  return text.replace(/[\u00A0-\u9999<>\&]/gim, (i) => '&#' + i.charCodeAt(0) + ';');
+};
+
+const releasesToHTML = (releases) => {
+  return Object.keys(releases).map((day) => {
+    const [date, time] = formatDate(new Date(parseInt(day, 10)));
+    const title = `<ul class="calendar-day"><li class="calendar-day-date"><strong>${date}</strong><i>${time}</i></li>`;
+    const listElements = releases[day].map((release) => {
+      return `<li>${encodeString(release)}</li>`;
+    });
+    return [title, '<ul class="calendar-day-events">', ...listElements, '</ul></li></ul>'].join('');
+  }).join('');
+};
+
+const HTMLBuilder = (releases) => {
+  return `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>KPop Upcoming Releases</title>
+        <style>
+          *{box-sizing:border-box}body{margin:0;color:#3c4142;font-size:1rem;font-family:-apple-system,'SF Pro Text','SF Pro Icons','Helvetica Neue','Helvetica','Arial',sans-serif;line-height:1.5}.calendar-day{margin:1rem 0;padding:0;list-style-type:none}.calendar-day-events{padding-left:2rem}.container{width:100%;max-width:30rem;padding:0 2rem;margin:0 auto}h1{color:#ce5891;text-transform:uppercase;margin-top:0;margin-bottom:.5rem;font-weight:bold;font-size:1rem}.calendar-day-date i{font-style:normal;margin-left:.25rem;opacity:.5}@media(prefers-color-scheme:dark){body{background:#201c1c;color:#fff}}
+        </style>
+      </head>
+      <body>
+      <div class="container">
+      <h1>🫰 KPop Upcoming Releases</h1>
+      ${releasesToHTML(releases)}
+      </div>
+      </body>
+    </html>
+  `;
+};
+
 // Cache API
 const fm = FileManager.iCloud();
 const dir = fm.joinPath(fm.documentsDirectory(), 'kpop-releases-cache');
@@ -57,7 +95,6 @@ const getReleasesAPI = async () => {
   const releasesWidgetKey = getKeyByValue(allWidgets, 'Upcoming Releases');
   const allUpcomingReleases = allWidgets[releasesWidgetKey].data.map((release) => {
     return {
-      // Clean releases with only artists
       title: release.title.split(' - ').filter((i) => i).join(' - '),
       date: release.startTime * 1000
     };
@@ -136,9 +173,28 @@ Object.keys(releases).forEach((day) => {
 
 mainStack.addSpacer();
 
+// Generate Alert
+const generateAlert = async (options) => {
+  let alert = new Alert();
+  alert.message = 'What would you like to do?';
+  options.forEach((option) => {
+    alert.addAction(option);
+  });
+  return await alert.presentAlert();
+};
+
 // Preview widget in large
 if (!config.runsInWidget) {
-  await widget.presentLarge();
+  const options = ['View all upcoming releases', 'Clear cache'];
+  const response = await generateAlert(options);
+  if (response === 0) {
+    const webView = new WebView();
+    webView.loadHTML(HTMLBuilder(await getReleases()));
+    await webView.present();
+  };
+  if (response === 1) {
+    await getReleasesAPI();
+  };
 };
 
 Script.setWidget(widget);
