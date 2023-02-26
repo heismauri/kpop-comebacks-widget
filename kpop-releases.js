@@ -1,7 +1,7 @@
 // Variables used by Scriptable.
 // These must be at the very top of the file. Do not edit.
 // icon-color: pink; icon-glyph: calendar-alt;
-// KPop Releases Widget by heismauri (v1.2.0)
+// KPop Releases Widget by heismauri (v1.2.1)
 
 (async () => {
   // Utilities
@@ -121,14 +121,17 @@
   // Set limit based on Widget size
   let limit;
   switch (config.widgetFamily) {
-    case 'small':
+    case 'small': {
       limit = 2;
       break;
-    case 'medium':
+    }
+    case 'medium': {
       limit = 3;
       break;
-    default:
+    }
+    default: {
       limit = 10;
+    }
   }
   // Ignore limit when script is run inside Scriptable
   if (config.runsInWidget) limit = parseInt(args.widgetParameter, 10) || limit;
@@ -188,27 +191,35 @@
 
   // Preview widget in large
   if (!config.runsInWidget) {
-    const options = ['View all upcoming releases', 'Clear cache', 'Update Script'];
+    const options = ['View all upcoming releases', 'Clear cache', 'Update script'];
     const response = await generateAlert('What would you like to do?', options);
-    if (response === 0) {
-      const webView = new WebView();
-      webView.loadHTML(HTMLBuilder(await getReleases()));
-      await webView.present();
-    }
-    if (response === 1) {
-      await getReleasesAPI();
-    }
-    if (response === 2) {
-      let message;
-      try {
-        const upstreamScript = new Request('https://raw.githubusercontent.com/heismauri/kpop-releases-widget/main/kpop-releases.js');
-        const kpopreleasesScript = await upstreamScript.loadString();
-        fm.writeString(module.filename, kpopreleasesScript);
-        message = 'The code has been updated. Please close your Scriptable app and run it again.';
-      } catch (error) {
-        message = 'The update has failed. Please try again later.';
+    switch (response) {
+      case 0: {
+        const webView = new WebView();
+        webView.loadHTML(HTMLBuilder(await getReleases()));
+        await webView.present();
+        break;
       }
-      await generateAlert(message, ['Close']);
+      case 1: {
+        await getReleasesAPI();
+        break;
+      }
+      case 2: {
+        let message;
+        try {
+          const upstreamScript = new Request('https://raw.githubusercontent.com/heismauri/kpop-releases-widget/main/kpop-releases.js');
+          const kpopreleasesScript = await upstreamScript.loadString();
+          fm.writeString(module.filename, kpopreleasesScript);
+          message = 'The code has been updated. Please close your Scriptable app and run it again.';
+        } catch (error) {
+          message = 'The update has failed. Please try again later.';
+        }
+        await generateAlert(message, ['Close']);
+        break;
+      }
+      default: {
+        break;
+      }
     }
   }
 
