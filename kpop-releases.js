@@ -1,9 +1,14 @@
 // Variables used by Scriptable.
 // These must be at the very top of the file. Do not edit.
 // icon-color: pink; icon-glyph: calendar-alt;
-// KPop Releases Widget by heismauri (v1.2.1)
+// KPop Releases Widget by heismauri (v1.2.2)
 
 (async () => {
+  // Variables
+  const scriptVersion = '1.2.2';
+  const PADDING = 15;
+  const baseURL = 'https://raw.githubusercontent.com/heismauri/kpop-releases-widget/main';
+
   // Utilities
   const addLeadingZero = (number) => {
     return `0${number}`.slice(-2);
@@ -78,7 +83,7 @@
         </div>
       </body>
     </html>
-  `;
+    `;
   };
 
   // Cache API
@@ -140,8 +145,6 @@
   const releases = await getReleases(limit);
 
   // Widget
-  const PADDING = 15;
-
   const widget = new ListWidget();
   widget.setPadding(PADDING, 12, PADDING, PADDING);
   widget.backgroundColor = Color.dynamic(new Color('#ffffff'), new Color('#201c1c'));
@@ -179,7 +182,8 @@
 
   mainStack.addSpacer();
 
-  // Generate Alert
+  // Config Utilities
+  // // Generate Alert
   const generateAlert = async (message, options) => {
     const alert = new Alert();
     alert.message = message;
@@ -189,9 +193,21 @@
     return alert.presentAlert();
   };
 
-  // Preview widget in large
+  // // Update checker
+  const updateChecker = async () => {
+    try {
+      const request = new Request(`${baseURL}/package.json`);
+      const json = await request.loadJSON();
+      return (json.version !== scriptVersion);
+    } catch (error) {
+      return false;
+    }
+  };
+
+  // Preview all releases, Clear cache, and update script
   if (!config.runsInWidget) {
-    const options = ['View all upcoming releases', 'Clear cache', 'Update script'];
+    const options = ['View all upcoming releases', 'Clear cache'];
+    if (await updateChecker()) options.push('Update now!');
     const response = await generateAlert('What would you like to do?', options);
     switch (response) {
       case 0: {
@@ -207,7 +223,7 @@
       case 2: {
         let message;
         try {
-          const upstreamScript = new Request('https://raw.githubusercontent.com/heismauri/kpop-releases-widget/main/kpop-releases.js');
+          const upstreamScript = new Request(`${baseURL}/kpop-releases.js`);
           const kpopreleasesScript = await upstreamScript.loadString();
           fm.writeString(module.filename, kpopreleasesScript);
           message = 'The code has been updated. Please close your Scriptable app and run it again.';
