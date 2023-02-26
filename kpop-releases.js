@@ -1,66 +1,66 @@
 // Variables used by Scriptable.
 // These must be at the very top of the file. Do not edit.
 // icon-color: pink; icon-glyph: calendar-alt;
-// KPop Releases Widget by heismauri (v1.1.1)
+// KPop Releases Widget by heismauri (v1.2.0)
 
-// Utilities
-const addLeadingZero = (number) => {
-  return `0${number}`.slice(-2);
-};
+(async () => {
+  // Utilities
+  const addLeadingZero = (number) => {
+    return `0${number}`.slice(-2);
+  };
 
-const formatAMPM = (date) => {
-  let hours = date.getHours();
-  const minutes = addLeadingZero(date.getMinutes());
-  const ampm = hours >= 12 ? 'PM' : 'AM';
-  hours %= 12;
-  hours = hours || 12;
-  hours = addLeadingZero(hours);
-  return `${hours}:${minutes}${ampm}`;
-};
+  const formatAMPM = (date) => {
+    let hours = date.getHours();
+    const minutes = addLeadingZero(date.getMinutes());
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = (hours %= 12) || 12;
+    hours = addLeadingZero(hours);
+    return `${hours}:${minutes}${ampm}`;
+  };
 
-const formatTime = (date) => {
-  const hours = addLeadingZero(date.getHours());
-  const minutes = addLeadingZero(date.getMinutes());
-  return `${hours}:${minutes}`;
-};
+  const formatTime = (date) => {
+    const hours = addLeadingZero(date.getHours());
+    const minutes = addLeadingZero(date.getMinutes());
+    return `${hours}:${minutes}`;
+  };
 
-const formatDate = (date) => {
-  const day = addLeadingZero(date.getDate());
-  const month = addLeadingZero(date.getMonth() + 1);
-  return [[day, month].join('.'), formatAMPM(date)];
-};
+  const formatDate = (date) => {
+    const day = addLeadingZero(date.getDate());
+    const month = addLeadingZero(date.getMonth() + 1);
+    return [[day, month].join('.'), formatAMPM(date)];
+  };
 
-const getKeyByValue = (object, value) => {
-  return Object.keys(object).find((key) => Object.values(object[key]).indexOf(value) > -1);
-};
+  const getKeyByValue = (object, value) => {
+    return Object.keys(object).find((key) => Object.values(object[key]).indexOf(value) > -1);
+  };
 
-const groupByDateAndLimit = (releases, limit) => {
-  return releases.slice(0, limit).reduce((accumulator, release) => {
-    const key = release.date;
-    accumulator[key] = accumulator[key] || [];
-    accumulator[key].push(release.title);
-    return accumulator;
-  }, {});
-};
+  const groupByDateAndLimit = (releases, limit) => {
+    return releases.slice(0, limit).reduce((accumulator, release) => {
+      const key = release.date;
+      accumulator[key] = accumulator[key] || [];
+      accumulator[key].push(release.title);
+      return accumulator;
+    }, {});
+  };
 
-// HTML Preview
-const encodeString = (text) => {
-  return text.replace(/[\u00A0-\u9999<>&]/gim, (i) => `&#${i.charCodeAt(0)};`);
-};
+  // HTML Preview
+  const encodeString = (text) => {
+    return text.replace(/[\u00A0-\u9999<>&]/gim, (i) => `&#${i.charCodeAt(0)};`);
+  };
 
-const releasesToHTML = (releases) => {
-  return Object.keys(releases).map((day) => {
-    const [date, time] = formatDate(new Date(parseInt(day, 10)));
-    const title = `<ul class="calendar-day"><li class="calendar-day-date"><strong>${date}</strong><i>${time}</i></li>`;
-    const listElements = releases[day].map((release) => {
-      return `<li>${encodeString(release)}</li>`;
-    });
-    return [title, '<ul class="calendar-day-events">', ...listElements, '</ul></li></ul>'].join('');
-  }).join('');
-};
+  const releasesToHTML = (releases) => {
+    return Object.keys(releases).map((day) => {
+      const [date, time] = formatDate(new Date(parseInt(day, 10)));
+      const title = `<ul class="calendar-day"><li class="calendar-day-date"><strong>${date}</strong><i>${time}</i></li>`;
+      const listElements = releases[day].map((release) => {
+        return `<li>${encodeString(release)}</li>`;
+      });
+      return [title, '<ul class="calendar-day-events">', ...listElements, '</ul></li></ul>'].join('');
+    }).join('');
+  };
 
-const HTMLBuilder = (releases) => {
-  return `
+  const HTMLBuilder = (releases) => {
+    return `
     <!DOCTYPE html>
     <html>
       <head>
@@ -72,133 +72,146 @@ const HTMLBuilder = (releases) => {
         </style>
       </head>
       <body>
-      <div class="container">
-      <h1>🫰 KPop Upcoming Releases</h1>
-      ${releasesToHTML(releases)}
-      </div>
+        <div class="container">
+          <h1>🫰 KPop Upcoming Releases</h1>
+          ${releasesToHTML(releases)}
+        </div>
       </body>
     </html>
   `;
-};
+  };
 
-// Cache API
-const fm = FileManager.iCloud();
-const dir = fm.joinPath(fm.documentsDirectory(), 'kpop-releases-cache');
-if (!fm.fileExists(dir)) fm.createDirectory(dir);
-const apiCache = fm.joinPath(dir, 'api.json');
+  // Cache API
+  const fm = FileManager.iCloud();
+  const dir = fm.joinPath(fm.documentsDirectory(), 'kpop-releases-cache');
+  if (!fm.fileExists(dir)) fm.createDirectory(dir);
+  const apiCache = fm.joinPath(dir, 'api.json');
 
-// Get releases
-const getReleasesAPI = async () => {
-  const request = new Request('https://gateway.reddit.com/desktopapi/v1/subreddits/kpop?include=structuredStyles');
-  const json = await request.loadJSON();
-  const allWidgets = json.structuredStyles.data.content.widgets.items;
-  const releasesWidgetKey = getKeyByValue(allWidgets, 'Upcoming Releases');
-  const allUpcomingReleases = allWidgets[releasesWidgetKey].data.map((release) => {
-    return {
-      title: release.title.split(' - ').filter((i) => i).join(' - '),
-      date: release.startTime * 1000
-    };
-  });
-  const sortedReleases = allUpcomingReleases
-    .sort((a, b) => a.title.localeCompare(b.title))
-    .sort((a, b) => a.date - b.date);
-  fm.writeString(apiCache, JSON.stringify(sortedReleases));
-};
+  // Get releases
+  const getReleasesAPI = async () => {
+    const request = new Request('https://gateway.reddit.com/desktopapi/v1/subreddits/kpop?include=structuredStyles');
+    const json = await request.loadJSON();
+    const allWidgets = json.structuredStyles.data.content.widgets.items;
+    const releasesWidgetKey = getKeyByValue(allWidgets, 'Upcoming Releases');
+    const allUpcomingReleases = allWidgets[releasesWidgetKey].data.map((release) => {
+      return {
+        title: release.title.split(' - ').filter((i) => i).join(' - '),
+        date: release.startTime * 1000
+      };
+    });
+    const sortedReleases = allUpcomingReleases
+      .sort((a, b) => a.title.localeCompare(b.title))
+      .sort((a, b) => a.date - b.date);
+    fm.writeString(apiCache, JSON.stringify(sortedReleases));
+  };
 
-const getReleases = async (limit) => {
-  if (!fm.fileExists(apiCache)) await getReleasesAPI();
-  await fm.downloadFileFromiCloud(apiCache);
-  const content = await JSON.parse(fm.readString(apiCache));
-  const timestamp = content.at(0).date;
-  const oneHourAgo = new Date() - (4.2 * 10 ** 6);
-  if (new Date(oneHourAgo) > new Date(parseInt(timestamp, 10))) {
-    await getReleasesAPI();
-    await getReleases();
+  const getReleases = async (limit) => {
+    if (!fm.fileExists(apiCache)) await getReleasesAPI();
+    await fm.downloadFileFromiCloud(apiCache);
+    const content = await JSON.parse(fm.readString(apiCache));
+    const timestamp = content.at(0).date;
+    const oneHourAgo = new Date() - (4.2 * 10 ** 6);
+    if (new Date(oneHourAgo) > new Date(parseInt(timestamp, 10))) {
+      await getReleasesAPI();
+      await getReleases();
+    }
+    return groupByDateAndLimit(content, limit);
+  };
+
+  // Set limit based on Widget size
+  let limit;
+  switch (config.widgetFamily) {
+    case 'small':
+      limit = 2;
+      break;
+    case 'medium':
+      limit = 3;
+      break;
+    default:
+      limit = 10;
   }
-  return groupByDateAndLimit(content, limit);
-};
+  // Ignore limit when script is run inside Scriptable
+  if (config.runsInWidget) limit = parseInt(args.widgetParameter, 10) || limit;
 
-// Set limit based on Widget size
-let limit;
-switch (config.widgetFamily) {
-  case 'small':
-    limit = 2;
-    break;
-  case 'medium':
-    limit = 3;
-    break;
-  default:
-    limit = 10;
-}
-// Ignore limit when script is run inside Scriptable
-if (config.runsInWidget) limit = parseInt(args.widgetParameter, 10) || limit;
+  // Run get releases
+  const releases = await getReleases(limit);
 
-// Run get releases
-const releases = await getReleases(limit);
+  // Widget
+  const PADDING = 15;
 
-// Widget
-const PADDING = 15;
+  const widget = new ListWidget();
+  widget.setPadding(PADDING, 12, PADDING, PADDING);
+  widget.backgroundColor = Color.dynamic(new Color('#ffffff'), new Color('#201c1c'));
 
-const widget = new ListWidget();
-widget.setPadding(PADDING, 12, PADDING, PADDING);
-widget.backgroundColor = Color.dynamic(new Color('#ffffff'), new Color('#201c1c'));
+  const widgetTitle = widget.addText('🫰 KPOP RELEASES');
+  widgetTitle.font = Font.semiboldSystemFont(12);
+  widgetTitle.textColor = new Color('#ce5891');
 
-const widgetTitle = widget.addText('🫰 KPOP RELEASES');
-widgetTitle.font = Font.semiboldSystemFont(12);
-widgetTitle.textColor = new Color('#ce5891');
+  const mainStack = widget.addStack();
+  mainStack.setPadding(0, 3, 0, 0);
+  mainStack.topAlignContent();
+  mainStack.layoutVertically();
 
-const mainStack = widget.addStack();
-mainStack.setPadding(0, 3, 0, 0);
-mainStack.topAlignContent();
-mainStack.layoutVertically();
+  mainStack.addSpacer();
 
-mainStack.addSpacer();
-
-// Print each release by day
-Object.keys(releases).forEach((day) => {
-  const dateStack = mainStack.addStack();
-  dateStack.layoutHorizontally();
-  const [date, time] = formatDate(new Date(parseInt(day, 10)));
-  const dateText = dateStack.addText(date);
-  dateText.font = Font.semiboldSystemFont(13);
-  dateStack.addSpacer(4);
-  const timeText = dateStack.addText(time);
-  timeText.font = Font.regularSystemFont(13);
-  timeText.textOpacity = 0.5;
-  const spaceBetweenDates = Object.keys(releases).at(-1) === day ? 0 : 4;
-  releases[day].forEach((release) => {
-    const releaseStack = mainStack.addStack();
-    const releaseText = releaseStack.addText(release);
-    releaseText.font = Font.regularSystemFont(13);
+  // Print each release by day
+  Object.keys(releases).forEach((day) => {
+    const dateStack = mainStack.addStack();
+    dateStack.layoutHorizontally();
+    const [date, time] = formatDate(new Date(parseInt(day, 10)));
+    const dateText = dateStack.addText(date);
+    dateText.font = Font.semiboldSystemFont(13);
+    dateStack.addSpacer(4);
+    const timeText = dateStack.addText(time);
+    timeText.font = Font.regularSystemFont(13);
+    timeText.textOpacity = 0.5;
+    const spaceBetweenDates = Object.keys(releases).at(-1) === day ? 0 : 4;
+    releases[day].forEach((release) => {
+      const releaseStack = mainStack.addStack();
+      const releaseText = releaseStack.addText(release);
+      releaseText.font = Font.regularSystemFont(13);
+    });
+    mainStack.addSpacer(spaceBetweenDates);
   });
-  mainStack.addSpacer(spaceBetweenDates);
-});
 
-mainStack.addSpacer();
+  mainStack.addSpacer();
 
-// Generate Alert
-const generateAlert = async (options) => {
-  const alert = new Alert();
-  alert.message = 'What would you like to do?';
-  options.forEach((option) => {
-    alert.addAction(option);
-  });
-  return alert.presentAlert();
-};
-
-// Preview widget in large
-if (!config.runsInWidget) {
-  const options = ['View all upcoming releases', 'Clear cache'];
-  const response = await generateAlert(options);
-  if (response === 0) {
-    const webView = new WebView();
-    webView.loadHTML(HTMLBuilder(await getReleases()));
-    await webView.present();
+  // Generate Alert
+  const generateAlert = async (message, options) => {
+    const alert = new Alert();
+    alert.message = message;
+    options.forEach((option) => {
+      alert.addAction(option);
+    });
+    return alert.presentAlert();
   };
-  if (response === 1) {
-    await getReleasesAPI();
-  };
-};
 
-Script.setWidget(widget);
-Script.complete();
+  // Preview widget in large
+  if (!config.runsInWidget) {
+    const options = ['View all upcoming releases', 'Clear cache', 'Update Script'];
+    const response = await generateAlert('What would you like to do?', options);
+    if (response === 0) {
+      const webView = new WebView();
+      webView.loadHTML(HTMLBuilder(await getReleases()));
+      await webView.present();
+    }
+    if (response === 1) {
+      await getReleasesAPI();
+    }
+    if (response === 2) {
+      let message;
+      try {
+        const upstreamScript = new Request('https://raw.githubusercontent.com/heismauri/kpop-releases-widget/main/kpop-releases.js');
+        const kpopreleasesScript = await upstreamScript.loadString();
+        fm.writeString(module.filename, kpopreleasesScript);
+        message = 'The code has been updated. Please close your Scriptable app and run it again.';
+      } catch (error) {
+        message = 'The update has failed. Please try again later.';
+      }
+      await generateAlert(message, ['Close']);
+    }
+  }
+
+  Script.setWidget(widget);
+  Script.complete();
+})();
