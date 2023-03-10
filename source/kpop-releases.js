@@ -243,4 +243,4 @@ const startWidget = async () => {
   Script.complete();
 };
 
-await startWidget();
+startWidget();

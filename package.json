@@ -1,7 +1,10 @@
 {
   "name": "kpop-releases-widget",
-  "version": "1.2.2",
+  "version": "1.2.4",
   "author": "heismauri",
+  "scripts": {
+    "build": "rm kpop-releases.js; awk '{sub(/^startWidget/, \"await startWidget\")}1' source/kpop-releases.js > kpop-releases.js"
+  },
   "devDependencies": {
     "@scriptable-ios/eslint-config": "latest",
     "@types/scriptable-ios": "latest",
