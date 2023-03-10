@@ -1,6 +1,6 @@
 {
   "name": "kpop-releases-widget",
-  "version": "1.2.4",
+  "version": "1.2.5",
   "author": "heismauri",
   "scripts": {
     "build": "rm kpop-releases.js; awk '{sub(/^startWidget/, \"await startWidget\")}1' source/kpop-releases.js > kpop-releases.js"

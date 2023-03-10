@@ -5,7 +5,7 @@
 
 const startWidget = async () => {
   // Variables
-  const scriptVersion = '1.2.4';
+  const scriptVersion = '1.2.5';
   const PADDING = 15;
   const baseURL = 'https://raw.githubusercontent.com/heismauri/kpop-releases-widget/main';
 
@@ -174,7 +174,7 @@ const startWidget = async () => {
 
   // Config Utilities
   // // Generate Alert
-  const generateAlert = async (message, options) => {
+  const generateAlert = async (message, options = []) => {
     const alert = new Alert();
     alert.message = message;
     options.forEach((option) => {
@@ -217,11 +217,11 @@ const startWidget = async () => {
           const upstreamScript = new Request(`${baseURL}/kpop-releases.js`);
           const kpopreleasesScript = await upstreamScript.loadString();
           fm.writeString(module.filename, kpopreleasesScript);
-          message = 'The code has been updated. Please close your Scriptable app and run it again.';
+          message = 'The widget has been updated, please re-open Scriptable';
         } catch (error) {
-          message = 'The update has failed. Please try again later.';
+          message = 'The update has failed, please try again later';
         }
-        await generateAlert(message, ['Close']);
+        await generateAlert(message);
         break;
       }
       default: {
