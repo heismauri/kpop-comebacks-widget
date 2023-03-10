@@ -104,7 +104,7 @@ const startWidget = async () => {
     await fm.downloadFileFromiCloud(apiCache);
     const content = await JSON.parse(fm.readString(apiCache));
     const timestamp = content.at(0).date;
-    const oneHourAgo = new Date() - (4.2 * 10 ** 6);
+    const oneHourAgo = new Date() - (3.6 * 10 ** 6);
     if (new Date(oneHourAgo) > new Date(parseInt(timestamp, 10))) {
       await getReleasesAPI();
       await getReleases();
