@@ -138,7 +138,8 @@ const startWidget = async () => {
   widget.setPadding(PADDING, 12, PADDING, PADDING);
   widget.backgroundColor = Color.dynamic(new Color('#ffffff'), new Color('#201c1c'));
 
-  const widgetTitle = widget.addText('🫰 KPOP RELEASES');
+  const widgetTitleText = (config.widgetFamily === 'small') ? 'RELEASES' : 'UPCOMING RELEASES';
+  const widgetTitle = widget.addText(`🫰 KPOP ${widgetTitleText}`);
   widgetTitle.font = Font.semiboldSystemFont(12);
   widgetTitle.textColor = new Color('#ce5891');
 
