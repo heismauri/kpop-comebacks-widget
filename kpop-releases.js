@@ -3,9 +3,9 @@
 // icon-color: pink; icon-glyph: calendar-alt;
 // KPop Releases Widget by heismauri (v1.2.2)
 
-(async () => {
+const startWidget = async () => {
   // Variables
-  const scriptVersion = '1.2.2';
+  const scriptVersion = '1.2.3';
   const PADDING = 15;
   const baseURL = 'https://raw.githubusercontent.com/heismauri/kpop-releases-widget/main';
 
@@ -241,4 +241,6 @@
 
   Script.setWidget(widget);
   Script.complete();
-})();
+};
+
+await startWidget();
