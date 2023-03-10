@@ -180,6 +180,7 @@ const startWidget = async () => {
     options.forEach((option) => {
       alert.addAction(option);
     });
+    alert.addCancelAction('Close');
     return alert.presentAlert();
   };
 
