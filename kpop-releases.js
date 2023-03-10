@@ -94,20 +94,9 @@ const startWidget = async () => {
 
   // Get releases
   const getReleasesAPI = async () => {
-    const request = new Request('https://gateway.reddit.com/desktopapi/v1/subreddits/kpop?include=structuredStyles');
+    const request = new Request('https://kpop-releases.heismauri.com/api');
     const json = await request.loadJSON();
-    const allWidgets = json.structuredStyles.data.content.widgets.items;
-    const releasesWidgetKey = getKeyByValue(allWidgets, 'Upcoming Releases');
-    const allUpcomingReleases = allWidgets[releasesWidgetKey].data.map((release) => {
-      return {
-        title: release.title.split(' - ').filter((i) => i).join(' - '),
-        date: release.startTime * 1000
-      };
-    });
-    const sortedReleases = allUpcomingReleases
-      .sort((a, b) => a.title.localeCompare(b.title))
-      .sort((a, b) => a.date - b.date);
-    fm.writeString(apiCache, JSON.stringify(sortedReleases));
+    fm.writeString(apiCache, JSON.stringify(json));
   };
 
   const getReleases = async (limit) => {
