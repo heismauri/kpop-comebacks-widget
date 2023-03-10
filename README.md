@@ -27,5 +27,5 @@ Stay up to date with the latest KPop releases by using this widget
 7. You're all set!
 
 ## Acknowledgements
-* [r/kpop](https://www.reddit.com/r/kpop/)
+* [KPop Releases API](https://github.com/heismauri/kpop-releases-api)
 * [Scriptable](https://scriptable.app/)
