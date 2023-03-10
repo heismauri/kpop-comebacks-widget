@@ -174,7 +174,7 @@ const startWidget = async () => {
 
   // Config Utilities
   // // Generate Alert
-  const generateAlert = async (message, options) => {
+  const generateAlert = async (message, options = []) => {
     const alert = new Alert();
     alert.message = message;
     options.forEach((option) => {
@@ -221,7 +221,7 @@ const startWidget = async () => {
         } catch (error) {
           message = 'The update has failed. Please try again later.';
         }
-        await generateAlert(message, ['Close']);
+        await generateAlert(message);
         break;
       }
       default: {
