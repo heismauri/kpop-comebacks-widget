@@ -1,9 +1,9 @@
 {
-  "name": "kpop-releases-widget",
+  "name": "kpop-comebacks-widget",
   "version": "1.2.5",
   "author": "heismauri",
   "scripts": {
-    "build": "rm kpop-releases.js; awk '{sub(/^startWidget/, \"await startWidget\")}1' source/kpop-releases.js > kpop-releases.js"
+    "build": "rm kpop-comebacks.js; awk '{sub(/^startWidget/, \"await startWidget\")}1' source/kpop-comebacks.js > kpop-comebacks.js"
   },
   "devDependencies": {
     "@scriptable-ios/eslint-config": "latest",

@@ -1,13 +1,13 @@
 // Variables used by Scriptable.
 // These must be at the very top of the file. Do not edit.
 // icon-color: pink; icon-glyph: calendar-alt;
-// KPop Releases Widget by heismauri (v1.2.2)
+// KPop Comebacks Widget by heismauri (v1.2.2)
 
 const startWidget = async () => {
   // Variables
   const scriptVersion = '1.2.5';
   const PADDING = 15;
-  const baseURL = 'https://raw.githubusercontent.com/heismauri/kpop-releases-widget/main';
+  const baseURL = 'https://raw.githubusercontent.com/heismauri/kpop-comebacks-widget/main';
 
   // Utilities
   const addLeadingZero = (number) => {
@@ -39,11 +39,11 @@ const startWidget = async () => {
     return Object.keys(object).find((key) => Object.values(object[key]).indexOf(value) > -1);
   };
 
-  const groupByDateAndLimit = (releases, limit) => {
-    return releases.slice(0, limit).reduce((accumulator, release) => {
-      const key = release.date;
+  const groupByDateAndLimit = (comebacks, limit) => {
+    return comebacks.slice(0, limit).reduce((accumulator, comeback) => {
+      const key = comeback.date;
       accumulator[key] = accumulator[key] || [];
-      accumulator[key].push(release.title);
+      accumulator[key].push(comeback.title);
       return accumulator;
     }, {});
   };
@@ -53,33 +53,33 @@ const startWidget = async () => {
     return text.replace(/[\u00A0-\u9999<>&]/gim, (i) => `&#${i.charCodeAt(0)};`);
   };
 
-  const releasesToHTML = (releases) => {
-    return Object.keys(releases).map((day) => {
+  const comebacksToHTML = (comebacks) => {
+    return Object.keys(comebacks).map((day) => {
       const [date, time] = formatDate(new Date(parseInt(day, 10)));
       const title = `<ul class="calendar-day"><li class="calendar-day-date"><strong>${date}</strong><i>${time}</i></li>`;
-      const listElements = releases[day].map((release) => {
-        return `<li>${encodeString(release)}</li>`;
+      const listElements = comebacks[day].map((comeback) => {
+        return `<li>${encodeString(comeback)}</li>`;
       });
       return [title, '<ul class="calendar-day-events">', ...listElements, '</ul></li></ul>'].join('');
     }).join('');
   };
 
-  const HTMLBuilder = (releases) => {
+  const HTMLBuilder = (comebacks) => {
     return `
     <!DOCTYPE html>
     <html>
       <head>
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>KPop Upcoming Releases</title>
+        <title>KPop Upcoming Comebacks</title>
         <style>
           *{box-sizing:border-box}body{margin:0;color:#3c4142;font-size:1rem;font-family:-apple-system,'SF Pro Text','SF Pro Icons','Helvetica Neue','Helvetica','Arial',sans-serif;line-height:1.5}.calendar-day{margin:1rem 0;padding:0;list-style-type:none}.calendar-day-events{padding-left:2rem}.container{width:100%;max-width:30rem;padding:0 2rem;margin:0 auto}h1{color:#ce5891;text-transform:uppercase;margin-top:0;margin-bottom:.5rem;font-weight:bold;font-size:1rem}.calendar-day-date i{font-style:normal;margin-left:.25rem;opacity:.5}@media(prefers-color-scheme:dark){body{background:#201c1c;color:#fff}}
         </style>
       </head>
       <body>
         <div class="container">
-          <h1>🫰 KPop Upcoming Releases</h1>
-          ${releasesToHTML(releases)}
+          <h1>🫰 KPop Upcoming Comebacks</h1>
+          ${comebacksToHTML(comebacks)}
         </div>
       </body>
     </html>
@@ -88,26 +88,26 @@ const startWidget = async () => {
 
   // Cache API
   const fm = FileManager.iCloud();
-  const dir = fm.joinPath(fm.documentsDirectory(), 'kpop-releases-cache');
+  const dir = fm.joinPath(fm.documentsDirectory(), 'kpop-comebacks-cache');
   if (!fm.fileExists(dir)) fm.createDirectory(dir);
   const apiCache = fm.joinPath(dir, 'api.json');
 
-  // Get releases
-  const getReleasesAPI = async () => {
-    const request = new Request('https://kpop-releases.heismauri.com/api');
+  // Get comebacks
+  const getComebacksAPI = async () => {
+    const request = new Request('https://kpop-comebacks.heismauri.com/api');
     const json = await request.loadJSON();
     fm.writeString(apiCache, JSON.stringify(json));
   };
 
-  const getReleases = async (limit) => {
-    if (!fm.fileExists(apiCache)) await getReleasesAPI();
+  const getComebacks = async (limit) => {
+    if (!fm.fileExists(apiCache)) await getComebacksAPI();
     await fm.downloadFileFromiCloud(apiCache);
     const content = await JSON.parse(fm.readString(apiCache));
     const timestamp = content.at(0).date;
     const oneHourAgo = new Date() - (3.6 * 10 ** 6);
     if (new Date(oneHourAgo) > new Date(parseInt(timestamp, 10))) {
-      await getReleasesAPI();
-      await getReleases();
+      await getComebacksAPI();
+      await getComebacks();
     }
     return groupByDateAndLimit(content, limit);
   };
@@ -130,8 +130,8 @@ const startWidget = async () => {
   // Ignore limit when script is run inside Scriptable
   if (config.runsInWidget) limit = parseInt(args.widgetParameter, 10) || limit;
 
-  // Run get releases
-  const releases = await getReleases(limit);
+  // Run get comebacks
+  const comebacks = await getComebacks(limit);
 
   // Widget
   const widget = new ListWidget();
@@ -150,8 +150,8 @@ const startWidget = async () => {
 
   mainStack.addSpacer();
 
-  // Print each release by day
-  Object.keys(releases).forEach((day) => {
+  // Print each comeback by day
+  Object.keys(comebacks).forEach((day) => {
     const dateStack = mainStack.addStack();
     dateStack.layoutHorizontally();
     const [date, time] = formatDate(new Date(parseInt(day, 10)));
@@ -161,11 +161,11 @@ const startWidget = async () => {
     const timeText = dateStack.addText(time);
     timeText.font = Font.regularSystemFont(13);
     timeText.textOpacity = 0.5;
-    const spaceBetweenDates = Object.keys(releases).at(-1) === day ? 0 : 4;
-    releases[day].forEach((release) => {
-      const releaseStack = mainStack.addStack();
-      const releaseText = releaseStack.addText(release);
-      releaseText.font = Font.regularSystemFont(13);
+    const spaceBetweenDates = Object.keys(comebacks).at(-1) === day ? 0 : 4;
+    comebacks[day].forEach((comeback) => {
+      const comebackStack = mainStack.addStack();
+      const comebackText = comebackStack.addText(comeback);
+      comebackText.font = Font.regularSystemFont(13);
     });
     mainStack.addSpacer(spaceBetweenDates);
   });
@@ -195,28 +195,28 @@ const startWidget = async () => {
     }
   };
 
-  // Preview all releases, Clear cache, and update script
+  // Preview all comebacks, Clear cache, and update script
   if (!config.runsInWidget) {
-    const options = ['View all upcoming releases', 'Clear cache'];
+    const options = ['View all upcoming comebacks', 'Clear cache'];
     if (await updateChecker()) options.push('Update now!');
     const response = await generateAlert('What would you like to do?', options);
     switch (response) {
       case 0: {
         const webView = new WebView();
-        webView.loadHTML(HTMLBuilder(await getReleases()));
+        webView.loadHTML(HTMLBuilder(await getComebacks()));
         await webView.present();
         break;
       }
       case 1: {
-        await getReleasesAPI();
+        await getComebacksAPI();
         break;
       }
       case 2: {
         let message;
         try {
-          const upstreamScript = new Request(`${baseURL}/kpop-releases.js`);
-          const kpopreleasesScript = await upstreamScript.loadString();
-          fm.writeString(module.filename, kpopreleasesScript);
+          const upstreamScript = new Request(`${baseURL}/kpop-comebacks.js`);
+          const kpopcomebacksScript = await upstreamScript.loadString();
+          fm.writeString(module.filename, kpopcomebacksScript);
           message = 'The widget has been updated, please re-open Scriptable';
         } catch (error) {
           message = 'The update has failed, please try again later';
@@ -234,4 +234,4 @@ const startWidget = async () => {
   Script.complete();
 };
 
-await startWidget();
+startWidget();
